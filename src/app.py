@@ -1,4 +1,10 @@
 # app.py
+import sys
+import os
+
+# Fix for PyInstaller: ensure 'services' package is findable at runtime
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 import argparse
 import time
 from services.camera import scanFrame, releaseCamera, initCamera, openCamera
