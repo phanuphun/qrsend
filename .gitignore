@@ -4,3 +4,8 @@
 build/
 dist/
 *.spec
+
+# Installer
+*.egg-info/
+installer/com0com-setup/
+installer/Output/

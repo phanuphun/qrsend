@@ -4,21 +4,33 @@ A Windows utility that reads QR codes via webcam and forwards the data through a
 
 ---
 
-## Prerequisites
+## Installation (Installer)
 
-| Requirement | Version | Notes |
-|---|---|---|
-| [com0com](https://sourceforge.net/projects/com0com/) | 2.2.2.0 (signed) | Must use the digitally signed build — unsigned drivers will not function on Windows 10/11 |
+The easiest way to install. No manual setup required.
+
+1. Download `qrsend-setup.exe` from the [Releases](https://github.com/your-username/qr-serial-port-simulator/releases) page
+2. Right-click → **Run as administrator**
+3. Follow the on-screen instructions
+
+The installer will automatically:
+- Install the com0com virtual serial port driver
+- Copy `qrsend.exe` to `C:\Program Files\qrsend\`
+- Add `qrsend` to your system PATH — use it from any terminal immediately
 
 ---
 
-## Installation
+## Installation (Manual)
 
-### 1. Install com0com
+For development or building from source.
 
-Download and install the **digitally signed** com0com driver (v2.2.2.0). Unsigned versions will show warning icons in Device Manager and COM ports will be inaccessible.
+### Prerequisites
 
-### 2. Clone the repository
+| Requirement | Version | Notes |
+|---|---|---|
+| [Python](https://www.python.org/downloads/) | 3.12+ | |
+| [com0com](https://sourceforge.net/projects/com0com/) | 2.2.2.0 (signed) | Must use the digitally signed build — unsigned drivers will not function on Windows 10/11 |
+
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/your-username/qr-serial-port-simulator.git
