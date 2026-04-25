@@ -8,7 +8,6 @@ A Windows utility that reads QR codes via webcam and forwards the data through a
 
 | Requirement | Version | Notes |
 |---|---|---|
-| [Python](https://www.python.org/downloads/) | 3.12+ | |
 | [com0com](https://sourceforge.net/projects/com0com/) | 2.2.2.0 (signed) | Must use the digitally signed build — unsigned drivers will not function on Windows 10/11 |
 
 ---
@@ -83,7 +82,7 @@ Install PyInstaller and build:
 
 ```bash
 pip install pyinstaller
-pyinstaller --onefile --collect-all cv2 --name qrsend src/app.py
+pyinstaller --onefile --collect-all cv2 --paths src --name qrsend src/app.py
 ```
 
 The executable will be output to `dist/qrsend.exe`.
@@ -95,79 +94,28 @@ To use `qrsend` from any terminal, add the `dist/` folder to your system PATH.
 ## Commands
 
 ### Scanning & Sending
+```
+scan --port <COM> [--baud <rate>]          Scan QR continuously, press q/ESC to stop
+send --port <COM> --data <string>          Send a string directly to a COM port
+```
 
-| Command | Description |
-|---|---|
-| `scan --port <COM> [--baud <rate>]` | Start QR scanner. Reads continuously until **q** or **ESC** is pressed. Sends each scan to the specified COM port. |
-| `send --port <COM> --data <string> [--baud <rate>]` | Send a string directly to a COM port without scanning. |
+### Virtual COM Port
+```
+list-ports                                 List all virtual COM ports
+install-pair --port-a <COM> --port-b <COM> [--emubr]   Create a new port pair (requires Admin)
+change-port --id <CNCA0> --name <COM>      Rename a port identifier to a COM name
+```
 
-**Options:**
+### Camera
+```
+open-camera [--index <n>]                  Open camera preview to test (q/ESC to close)
+set-camera --index <n>                     Set default camera index (saved to config.json)
+```
 
-| Option | Default | Description |
-|---|---|---|
-| `--port` | *(required)* | Target COM port, e.g. `COM5` |
-| `--data` | *(required for send)* | Data string to send |
-| `--baud` | `9600` | Baud rate |
-
----
-
-### Virtual COM Port Management
-
-| Command | Description |
-|---|---|
-| `list-ports` | List all virtual COM ports created by com0com. |
-| `install-pair --port-a <COM> --port-b <COM> [--emubr]` | Create a new virtual COM port pair. Requires Administrator privileges. |
-| `change-port --id <id> --name <COM>` | Rename a port identifier (e.g. `CNCA0`) to a COM port name (e.g. `COM9`). |
-
-**Options:**
-
-| Option | Default | Description |
-|---|---|---|
-| `--port-a` | *(required)* | Port A name, e.g. `COM5` |
-| `--port-b` | *(required)* | Port B name, e.g. `COM6` |
-| `--emubr` | `false` | Enable baud rate emulation for accurate timing |
-| `--id` | *(required)* | Port identifier, e.g. `CNCA0` or `CNCB0` |
-| `--name` | *(required)* | New COM port name, e.g. `COM9` |
-
----
-
-### Camera Configuration
-
-| Command | Description |
-|---|---|
-| `open-camera [--index <n>]` | Open the camera for testing. Press **q** or **ESC** to close. |
-| `set-camera --index <n>` | Set the default camera index used by the `scan` command. Saved to `config.json`. |
-
-**Options:**
-
-| Option | Default | Description |
-|---|---|---|
-| `--index` | `0` (or saved value) | Camera index — `0` is the first camera, `1` is the second, etc. |
-
----
-
-### com0com Configuration
-
-| Command | Description |
-|---|---|
-| `set-com0com --path <path>` | Set the path to `setupc.exe`. Use this if com0com is installed in a non-default location. Saved to `config.json`. |
-| `get-com0com` | Display the currently configured path to `setupc.exe`. |
-
-**Options:**
-
-| Option | Default | Description |
-|---|---|---|
-| `--path` | *(required)* | Full path to `setupc.exe`, e.g. `C:\tools\com0com\setupc.exe` |
-
----
-
-## Configuration
-
-Settings are persisted in `config.json` at the project root. The file is created automatically on first use.
-
-| Key | Default | Description |
-|---|---|---|
-| `camera_index` | `0` | Camera index used by the `scan` command |
-| `com0com_path` | `C:\Program Files (x86)\com0com\setupc.exe` | Path to `setupc.exe` |
+### com0com Path
+```
+get-com0com                                Show current path to setupc.exe
+set-com0com --path <path>                  Set path to setupc.exe (saved to config.json)
+```
 
 ---
