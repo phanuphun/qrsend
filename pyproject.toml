@@ -1,0 +1,4 @@
+[tool.taskipy.tasks]
+freeze = "pipreqs src --force --encoding=utf-8 --savepath ./requirements.txt"
+build  = "pyinstaller --onefile --collect-all cv2 --name qrsend src/app.py"
+clean  = "rmdir /s /q build dist"

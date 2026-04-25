@@ -1,18 +1,26 @@
 import subprocess
 import ctypes
-import sys
 import os
 import tempfile
 import time
 
-SETUPC_PATH = r"C:\Program Files (x86)\com0com\setupc.exe"
-SETUPC_DIR  = r"C:\Program Files (x86)\com0com"
+from services.config import getCom0comPath
+
+
+def _getPaths() -> tuple[str, str]:
+    """Return (setupc_path, setupc_dir) จาก config"""
+    setupc_path = getCom0comPath()
+    setupc_dir  = os.path.dirname(setupc_path)
+    return setupc_path, setupc_dir
+
 
 def isAdmin():
     return ctypes.windll.shell32.IsUserAnAdmin()
 
+
 def installPair(port_a: str, port_b: str, emu_br: bool = False):
     """สร้าง virtual port pair ใหม่ เช่น installPair("COM5", "COM6", emu_br=True)"""
+    setupc_path, setupc_dir = _getPaths()
     br = "EmuBR=yes" if emu_br else ""
     prms_a = f"PortName={port_a},{br}" if br else f"PortName={port_a}"
     prms_b = f"PortName={port_b},{br}" if br else f"PortName={port_b}"
@@ -20,61 +28,62 @@ def installPair(port_a: str, port_b: str, emu_br: bool = False):
 
     if isAdmin():
         result = subprocess.run(
-            [SETUPC_PATH, "install", prms_a, prms_b],
-            capture_output=True, text=True, cwd=SETUPC_DIR
+            [setupc_path, "install", prms_a, prms_b],
+            capture_output=True, text=True, cwd=setupc_dir
         )
         print(result.stdout or f"สร้าง pair {port_a} ↔ {port_b} เรียบร้อย")
     else:
         ctypes.windll.shell32.ShellExecuteW(
-            None, "runas", SETUPC_PATH,
+            None, "runas", setupc_path,
             args_str,
-            SETUPC_DIR, 0
+            setupc_dir, 0
         )
         time.sleep(2.0)
         print(f"สร้าง pair {port_a} ↔ {port_b} เรียบร้อย (ต้องการ admin)")
 
+
 def changePortName(port_id: str, port_name: str):
     """เปลี่ยนชื่อ port เช่น changePortName("CNCA0", "COM9")"""
+    setupc_path, setupc_dir = _getPaths()
     args_str = f'change {port_id} PortName={port_name}'
 
     if isAdmin():
         result = subprocess.run(
-            [SETUPC_PATH, "change", port_id, f"PortName={port_name}"],
-            capture_output=True, text=True, cwd=SETUPC_DIR
+            [setupc_path, "change", port_id, f"PortName={port_name}"],
+            capture_output=True, text=True, cwd=setupc_dir
         )
         print(result.stdout or f"เปลี่ยน {port_id} → {port_name} เรียบร้อย")
     else:
         ctypes.windll.shell32.ShellExecuteW(
-            None, "runas", SETUPC_PATH,
+            None, "runas", setupc_path,
             args_str,
-            SETUPC_DIR, 0  # SW_HIDE
+            setupc_dir, 0
         )
         time.sleep(1.5)
         print(f"เปลี่ยน {port_id} → {port_name} เรียบร้อย (ต้องการ admin)")
 
+
 def listPorts():
+    setupc_path, setupc_dir = _getPaths()
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".txt")
     tmp.close()
 
     if isAdmin():
-        # รันตรงๆ ได้เลย
         subprocess.run(
-            [SETUPC_PATH, "--output", tmp.name, "list"],
-            capture_output=True, cwd=SETUPC_DIR
+            [setupc_path, "--output", tmp.name, "list"],
+            capture_output=True, cwd=setupc_dir
         )
     else:
-        # ขอ elevation แบบ silent — เขียน output ลงไฟล์
         ctypes.windll.shell32.ShellExecuteW(
-            None, "runas", SETUPC_PATH,
+            None, "runas", setupc_path,
             f'--output "{tmp.name}" list',
-            SETUPC_DIR, 0   # ← 0 = ซ่อน window
+            setupc_dir, 0
         )
-        time.sleep(1.5)  # รอให้รันเสร็จ
+        time.sleep(1.5)
 
-    # อ่านจากไฟล์
     with open(tmp.name, "r") as f:
         output = f.read()
 
-    os.unlink(tmp.name)  # ลบไฟล์ temp
+    os.unlink(tmp.name)
     print(output)
     return output
