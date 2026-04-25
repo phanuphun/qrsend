@@ -8,7 +8,7 @@ A Windows utility that reads QR codes via webcam and forwards the data through a
 
 The easiest way to install. No manual setup required.
 
-1. Download `qrsend-setup.exe` from the [Releases](https://github.com/your-username/qr-serial-port-simulator/releases) page
+1. Download `qrsend-setup.exe` from the [Releases](https://github.com/phanuphun/qrsend/releases) page
 2. Right-click → **Run as administrator**
 3. Follow the on-screen instructions
 
