@@ -1,23 +1,35 @@
 # app.py
 import argparse
-from services.camera import openCamera
+import time
+from services.camera import scanFrame, releaseCamera
 from services.serial_port import writeToSerial
 from services.com0com import listPorts, changePortName, installPair
+from services.mqtt_client import publishMessage
+
+SCAN_COOLDOWN = 2.0  # วินาที — ป้องกันอ่าน QR เดิมซ้ำ
 
 def main():
     parser = argparse.ArgumentParser(description="QR Serial Port Simulator")
     subparsers = parser.add_subparsers(dest="command")
 
     # คำสั่ง: scan
-    scan_parser = subparsers.add_parser("scan", help="สแกน QR แล้วส่งเข้า serial port")
-    scan_parser.add_argument("--port", type=str, required=True, help="COM port เช่น COM9")
+    scan_parser = subparsers.add_parser("scan", help="สแกน QR แล้วส่งเข้า serial port (วนซ้ำจนกว่าจะกด Ctrl+C)")
+    scan_parser.add_argument("--port", type=str, required=True, help="COM port เช่น COM7")
     scan_parser.add_argument("--baud", type=int, default=9600, help="Baud rate (default: 9600)")
+    scan_parser.add_argument("--mqtt", action="store_true", help="Publish ข้อมูลไปยัง MQTT broker ด้วย")
+    scan_parser.add_argument("--topic", type=str, default="qr/scan", help="MQTT topic (default: qr/scan)")
+    scan_parser.add_argument("--mqtt-host", type=str, default="localhost", help="MQTT broker host (default: localhost)")
+    scan_parser.add_argument("--mqtt-port", type=int, default=1883, help="MQTT broker port (default: 1883)")
 
     # คำสั่ง: send
     send_parser = subparsers.add_parser("send", help="ส่งข้อมูลตรงๆ เข้า serial port")
-    send_parser.add_argument("--port", type=str, required=True, help="COM port เช่น COM9")
+    send_parser.add_argument("--port", type=str, required=True, help="COM port เช่น COM7")
     send_parser.add_argument("--data", type=str, required=True, help="ข้อมูลที่ต้องการส่ง")
     send_parser.add_argument("--baud", type=int, default=9600, help="Baud rate (default: 9600)")
+    send_parser.add_argument("--mqtt", action="store_true", help="Publish ข้อมูลไปยัง MQTT broker ด้วย")
+    send_parser.add_argument("--topic", type=str, default="qr/scan", help="MQTT topic (default: qr/scan)")
+    send_parser.add_argument("--mqtt-host", type=str, default="localhost", help="MQTT broker host (default: localhost)")
+    send_parser.add_argument("--mqtt-port", type=int, default=1883, help="MQTT broker port (default: 1883)")
 
     # คำสั่ง: list-ports
     subparsers.add_parser("list-ports", help="แสดง COM ports ที่มีอยู่ (สำหรับ Windows)")
@@ -40,14 +52,36 @@ def main():
         return
 
     if args.command == "scan":
-        print(f"เปิดกล้อง... กำลังรอ QR code")
-        qrData = openCamera()
-        if qrData:
-            print(f"QR: {qrData}")
-            writeToSerial(args.port, qrData, args.baud)
+        print(f"QR Scanner เริ่มทำงาน... (Ctrl+C เพื่อหยุด)")
+        last_data = ""
+        last_time  = 0.0
+        try:
+            while True:
+                qrData = scanFrame()
+                if not qrData:
+                    continue
+
+                now = time.time()
+                # ป้องกันอ่าน QR เดิมซ้ำภายใน cooldown
+                if qrData == last_data and (now - last_time) < SCAN_COOLDOWN:
+                    continue
+
+                print(f"QR: {qrData}")
+                writeToSerial(args.port, qrData, args.baud)
+                if args.mqtt:
+                    publishMessage(qrData, args.topic, args.mqtt_host, args.mqtt_port)
+
+                last_data = qrData
+                last_time  = now
+
+        except KeyboardInterrupt:
+            print("\nหยุดการทำงาน")
+            releaseCamera()
 
     elif args.command == "send":
         writeToSerial(args.port, args.data, args.baud)
+        if args.mqtt:
+            publishMessage(args.data, args.topic, args.mqtt_host, args.mqtt_port)
 
     elif args.command == "list-ports":
         listPorts()

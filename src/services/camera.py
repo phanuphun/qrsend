@@ -4,22 +4,19 @@ import time
 cap = cv2.VideoCapture(0)
 detector = cv2.QRCodeDetector()
 
-def openCamera():
-    print("QR Scanner รันอยู่เบื้องหลัง... (Ctrl+C เพื่อหยุด)")
+def scanFrame() -> str | None:
+    """อ่าน 1 frame และ return QR data หรือ None ถ้าไม่เจอ"""
+    ret, frame = cap.read()
+    if not ret:
+        time.sleep(0.1)
+        return None
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            time.sleep(0.1)
-            continue
+    cv2.imshow("QR Scanner", frame)
+    cv2.waitKey(1)
 
+    data, _, _ = detector.detectAndDecode(frame)
+    return data if data else None
 
-        cv2.imshow("Debug", frame)   # ← เพิ่มบรรทัดนี้
-        cv2.waitKey(1)               # ← และบรรทัดนี้
-
-        data, _, _ = detector.detectAndDecode(frame)
-
-        if data:
-            cap.release()
-            cv2.destroyAllWindows()
-            return data
+def releaseCamera():
+    cap.release()
+    cv2.destroyAllWindows()
